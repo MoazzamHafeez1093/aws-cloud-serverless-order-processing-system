@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OrderFlow — Serverless Order Processing</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --border: #1e1e2e;
+    --accent: #00ff88;
+    --accent2: #7c3aed;
+    --text: #e8e8f0;
+    --muted: #6b6b80;
+    --danger: #ff4560;
+    --font-head: 'Syne', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-head);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid bg */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,255,136,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,136,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Glow blobs */
+  .blob1 {
+    position: fixed;
+    top: -200px; left: -200px;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(0,255,136,0.08) 0%, transparent 70%);
+    pointer-events: none; z-index: 0;
+  }
+  .blob2 {
+    position: fixed;
+    bottom: -200px; right: -200px;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(124,58,237,0.1) 0%, transparent 70%);
+    pointer-events: none; z-index: 0;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 20px 40px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,10,15,0.8);
+    backdrop-filter: blur(20px);
+  }
+  .logo {
+    font-size: 20px; font-weight: 800; letter-spacing: -0.5px;
+    color: var(--text);
+  }
+  .logo span { color: var(--accent); }
+  .nav-badge {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--accent);
+    border: 1px solid rgba(0,255,136,0.3);
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: rgba(0,255,136,0.05);
+  }
+
+  /* HERO */
+  .hero {
+    position: relative; z-index: 1;
+    padding: 160px 40px 80px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .hero-tag {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .hero-tag::before {
+    content: '';
+    width: 24px; height: 1px;
+    background: var(--accent);
+  }
+  h1 {
+    font-size: clamp(48px, 7vw, 88px);
+    font-weight: 800;
+    line-height: 0.95;
+    letter-spacing: -3px;
+    margin-bottom: 32px;
+  }
+  h1 em {
+    font-style: normal;
+    color: transparent;
+    -webkit-text-stroke: 1px rgba(255,255,255,0.3);
+  }
+  .hero-desc {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    color: var(--muted);
+    line-height: 1.7;
+    max-width: 520px;
+    margin-bottom: 48px;
+  }
+
+  /* ARCH PILLS */
+  .arch-row {
+    display: flex; flex-wrap: wrap; gap: 10px;
+    margin-bottom: 60px;
+  }
+  .arch-pill {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 6px 14px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    background: var(--surface);
+    transition: all 0.2s;
+  }
+  .arch-pill.active {
+    border-color: rgba(0,255,136,0.4);
+    color: var(--accent);
+    background: rgba(0,255,136,0.05);
+  }
+
+  /* MAIN LAYOUT */
+  .main {
+    position: relative; z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 40px 120px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+
+  /* FORM CARD */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .card-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+  .card-title {
+    font-size: 13px;
+    font-family: var(--font-mono);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .card-body { padding: 28px; }
+
+  /* FORM */
+  .field { margin-bottom: 20px; }
+  label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 8px;
+  }
+  input, textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  input:focus, textarea:focus {
+    border-color: rgba(0,255,136,0.5);
+    box-shadow: 0 0 0 3px rgba(0,255,136,0.06);
+  }
+  input::placeholder, textarea::placeholder { color: #3a3a4a; }
+  textarea { resize: none; height: 80px; }
+
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* ITEMS */
+  .items-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 10px;
+  }
+  .item-row {
+    display: grid;
+    grid-template-columns: 1fr 80px 32px;
+    gap: 8px;
+    margin-bottom: 8px;
+    align-items: center;
+  }
+  .remove-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    cursor: pointer;
+    height: 42px;
+    font-size: 16px;
+    transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .remove-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+  .add-item-btn {
+    background: none;
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 10px;
+    width: 100%;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    transition: all 0.2s;
+    margin-top: 4px;
+    margin-bottom: 20px;
+  }
+  .add-item-btn:hover { border-color: rgba(0,255,136,0.4); color: var(--accent); }
+
+  /* SUBMIT */
+  .submit-btn {
+    width: 100%;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    padding: 16px;
+    font-family: var(--font-head);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .submit-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0,255,136,0.25); }
+  .submit-btn:active { transform: translateY(0); }
+  .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* STATUS PANEL */
+  .status-panel { display: flex; flex-direction: column; gap: 16px; }
+
+  .status-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    transition: all 0.3s;
+  }
+  .status-card.success { border-color: rgba(0,255,136,0.4); background: rgba(0,255,136,0.04); }
+  .status-card.error { border-color: rgba(255,69,96,0.4); background: rgba(255,69,96,0.04); }
+  .status-card.loading { border-color: rgba(124,58,237,0.4); background: rgba(124,58,237,0.04); }
+
+  .status-icon {
+    font-size: 28px;
+    margin-bottom: 10px;
+    display: block;
+  }
+  .status-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .status-msg {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  /* FLOW STEPS */
+  .flow-steps { display: flex; flex-direction: column; gap: 12px; }
+  .flow-step {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 18px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    transition: all 0.4s;
+    opacity: 0.4;
+  }
+  .flow-step.active { opacity: 1; border-color: rgba(0,255,136,0.3); }
+  .flow-step.done { opacity: 1; border-color: rgba(0,255,136,0.5); background: rgba(0,255,136,0.04); }
+  .step-icon {
+    width: 32px; height: 32px;
+    border-radius: 6px;
+    background: var(--surface);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+  }
+  .flow-step.done .step-icon { background: rgba(0,255,136,0.1); border-color: rgba(0,255,136,0.4); }
+  .step-info { flex: 1; }
+  .step-name {
+    font-size: 13px; font-weight: 600;
+    margin-bottom: 2px;
+  }
+  .step-desc {
+    font-family: var(--font-mono);
+    font-size: 11px; color: var(--muted);
+  }
+  .step-check {
+    font-size: 14px;
+    color: var(--accent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .flow-step.done .step-check { opacity: 1; }
+
+  /* TERMINAL */
+  .terminal {
+    background: #050508;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.8;
+    min-height: 80px;
+    max-height: 160px;
+    overflow-y: auto;
+    margin-top: 4px;
+  }
+  .terminal .t-green { color: var(--accent); }
+  .terminal .t-purple { color: #a78bfa; }
+  .terminal .t-red { color: var(--danger); }
+  .terminal .t-white { color: var(--text); }
+
+  /* STATS ROW */
+  .stats-row {
+    display: grid; grid-template-columns: repeat(3,1fr); gap: 12px;
+    margin-bottom: 16px;
+  }
+  .stat-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+  }
+  .stat-num {
+    font-size: 28px; font-weight: 800;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .stat-label {
+    font-family: var(--font-mono);
+    font-size: 10px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+
+  /* FOOTER */
+  footer {
+    position: relative; z-index: 1;
+    text-align: center;
+    padding: 40px;
+    border-top: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+
+  /* PULSE ANIMATION */
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .pulse { animation: pulse 1.5s ease-in-out infinite; }
+
+  @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+  .fade-in { animation: fadeIn 0.4s ease forwards; }
+
+  @media (max-width: 768px) {
+    .main { grid-template-columns: 1fr; }
+    nav { padding: 16px 20px; }
+    .hero { padding: 120px 20px 60px; }
+    .main { padding: 0 20px 80px; }
+    h1 { letter-spacing: -2px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="blob1"></div>
+<div class="blob2"></div>
+
+<nav>
+  <div class="logo">Order<span>Flow</span></div>
+  <div class="nav-badge">▲ AWS Serverless</div>
+</nav>
+
+<section class="hero">
+  <div class="hero-tag">Live Demo</div>
+  <h1>Serverless<br><em>Order</em><br>Processing</h1>
+  <p class="hero-desc">
+    A real-time order processing system built on AWS serverless architecture.
+    Every order you place is saved to DynamoDB, queued in SQS, and triggers an SNS email — instantly.
+  </p>
+  <div class="arch-row">
+    <div class="arch-pill active">API Gateway</div>
+    <div class="arch-pill active">Lambda</div>
+    <div class="arch-pill active">SQS FIFO</div>
+    <div class="arch-pill active">SNS</div>
+    <div class="arch-pill active">DynamoDB</div>
+    <div class="arch-pill">CloudWatch Logs</div>
+  </div>
+</section>
+
+<div class="main">
+
+  <!-- FORM -->
+  <div>
+    <div class="stats-row">
+      <div class="stat-box">
+        <div class="stat-num" id="orderCount">6</div>
+        <div class="stat-label">Orders placed</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num">~50ms</div>
+        <div class="stat-label">Avg response</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" style="color:#a78bfa">3</div>
+        <div class="stat-label">AWS services</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-dot"></div>
+        <div class="card-title">Place a live order</div>
+      </div>
+      <div class="card-body">
+        <div class="field-row">
+          <div class="field">
+            <label>Order ID</label>
+            <input type="text" id="orderID" placeholder="e.g. ORD-9001" />
+          </div>
+          <div class="field">
+            <label>Customer Name</label>
+            <input type="text" id="customerName" placeholder="Full name" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Shipping Address</label>
+          <textarea id="shippingAddress" placeholder="Street, City, Country"></textarea>
+        </div>
+
+        <div class="items-label">Items</div>
+        <div id="itemsList">
+          <div class="item-row">
+            <input type="text" placeholder="Item ID (e.g. item001)" class="itemId" />
+            <input type="number" placeholder="Qty" class="itemQty" min="1" value="1" />
+            <button class="remove-btn" onclick="removeItem(this)">×</button>
+          </div>
+        </div>
+        <button class="add-item-btn" onclick="addItem()">+ Add another item</button>
+
+        <button class="submit-btn" id="submitBtn" onclick="placeOrder()">
+          Place Order →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATUS PANEL -->
+  <div class="status-panel">
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-dot" style="background:#a78bfa;box-shadow:0 0 8px #a78bfa"></div>
+        <div class="card-title">Order pipeline</div>
+      </div>
+      <div class="card-body" style="padding:20px">
+        <div class="flow-steps" id="flowSteps">
+          <div class="flow-step" id="step1">
+            <div class="step-icon">⚡</div>
+            <div class="step-info">
+              <div class="step-name">API Gateway</div>
+              <div class="step-desc">Receives POST request</div>
+            </div>
+            <div class="step-check">✓</div>
+          </div>
+          <div class="flow-step" id="step2">
+            <div class="step-icon">λ</div>
+            <div class="step-info">
+              <div class="step-name">Lambda Function</div>
+              <div class="step-desc">Processes order logic</div>
+            </div>
+            <div class="step-check">✓</div>
+          </div>
+          <div class="flow-step" id="step3">
+            <div class="step-icon">⬡</div>
+            <div class="step-info">
+              <div class="step-name">SQS FIFO Queue</div>
+              <div class="step-desc">Order queued for processing</div>
+            </div>
+            <div class="step-check">✓</div>
+          </div>
+          <div class="flow-step" id="step4">
+            <div class="step-icon">✉</div>
+            <div class="step-info">
+              <div class="step-name">SNS Notification</div>
+              <div class="step-desc">Email sent to admin</div>
+            </div>
+            <div class="step-check">✓</div>
+          </div>
+          <div class="flow-step" id="step5">
+            <div class="step-icon">◈</div>
+            <div class="step-info">
+              <div class="step-name">DynamoDB</div>
+              <div class="step-desc">Order persisted to database</div>
+            </div>
+            <div class="step-check">✓</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-dot" style="background:#a78bfa;box-shadow:0 0 8px #a78bfa"></div>
+        <div class="card-title">Response log</div>
+      </div>
+      <div class="card-body" style="padding:16px">
+        <div class="terminal" id="terminal">
+          <span class="t-green">$</span> <span class="t-white">Waiting for order...</span><br>
+          <span class="t-purple"># Place an order to see the live response</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  Built with AWS Serverless — API Gateway · Lambda · SQS · SNS · DynamoDB<br><br>
+  <a href="https://github.com/MoazzamHafeez1093/serverless-order-processing" target="_blank">View on GitHub →</a>
+</footer>
+
+<script>
+  const API_URL = 'https://autw1j7mt0.execute-api.eu-north-1.amazonaws.com/default/LambdaSQS';
+  let orderCount = 6;
+
+  function addItem() {
+    const list = document.getElementById('itemsList');
+    const row = document.createElement('div');
+    row.className = 'item-row fade-in';
+    row.innerHTML = `
+      <input type="text" placeholder="Item ID (e.g. item001)" class="itemId" />
+      <input type="number" placeholder="Qty" class="itemQty" min="1" value="1" />
+      <button class="remove-btn" onclick="removeItem(this)">×</button>
+    `;
+    list.appendChild(row);
+  }
+
+  function removeItem(btn) {
+    const rows = document.querySelectorAll('.item-row');
+    if (rows.length > 1) btn.closest('.item-row').remove();
+  }
+
+  function resetSteps() {
+    for (let i = 1; i <= 5; i++) {
+      const s = document.getElementById('step' + i);
+      s.classList.remove('active', 'done');
+    }
+  }
+
+  async function animateSteps() {
+    const delays = [0, 300, 600, 900, 1200];
+    for (let i = 1; i <= 5; i++) {
+      await new Promise(r => setTimeout(r, delays[i-1]));
+      document.getElementById('step' + i).classList.add('active');
+      await new Promise(r => setTimeout(r, 200));
+      document.getElementById('step' + i).classList.add('done');
+    }
+  }
+
+  function log(html) {
+    const t = document.getElementById('terminal');
+    t.innerHTML += html;
+    t.scrollTop = t.scrollHeight;
+  }
+
+  async function placeOrder() {
+    const orderID = document.getElementById('orderID').value.trim();
+    const customerName = document.getElementById('customerName').value.trim();
+    const shippingAddress = document.getElementById('shippingAddress').value.trim();
+
+    if (!orderID || !customerName || !shippingAddress) {
+      alert('Please fill in Order ID, Customer Name, and Shipping Address.');
+      return;
+    }
+
+    const itemRows = document.querySelectorAll('.item-row');
+    const items = [];
+    for (const row of itemRows) {
+      const id = row.querySelector('.itemId').value.trim();
+      const qty = parseInt(row.querySelector('.itemQty').value) || 1;
+      if (id) items.push({ itemId: id, quantity: qty });
+    }
+    if (items.length === 0) { alert('Add at least one item.'); return; }
+
+    const payload = { orderID, customerName, items, shippingAddress };
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.textContent = 'Processing...';
+    resetSteps();
+
+    const terminal = document.getElementById('terminal');
+    terminal.innerHTML = '';
+    log(`<span class="t-green">$</span> <span class="t-white">POST ${API_URL}</span><br>`);
+    log(`<span class="t-purple"># Sending order payload...</span><br>`);
+    log(`<span class="t-white">${JSON.stringify(payload, null, 2).replace(/\n/g,'<br>').replace(/ /g,'&nbsp;')}</span><br>`);
+
+    animateSteps();
+
+    try {
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const text = await res.text();
+      
+      await new Promise(r => setTimeout(r, 1400));
+
+      if (res.ok) {
+        orderCount++;
+        document.getElementById('orderCount').textContent = orderCount;
+        log(`<br><span class="t-green">✓ 200 OK — ${text}</span><br>`);
+        log(`<span class="t-purple"># Order saved to DynamoDB</span><br>`);
+        log(`<span class="t-purple"># Queued in SQS FIFO</span><br>`);
+        log(`<span class="t-purple"># Email sent via SNS</span><br>`);
+        btn.textContent = '✓ Order placed!';
+        btn.style.background = '#00ff88';
+        setTimeout(() => {
+          btn.textContent = 'Place Order →';
+          btn.style.background = '';
+          btn.disabled = false;
+        }, 3000);
+      } else {
+        log(`<br><span class="t-red">✗ Error: ${text}</span><br>`);
+        resetSteps();
+        btn.textContent = 'Place Order →';
+        btn.disabled = false;
+      }
+    } catch (e) {
+      log(`<br><span class="t-red">✗ Network error: ${e.message}</span><br>`);
+      resetSteps();
+      btn.textContent = 'Place Order →';
+      btn.disabled = false;
+    }
+  }
+
+  // Pre-fill with sample data
+  document.getElementById('orderID').value = 'ORD-' + Math.floor(Math.random()*9000+1000);
+</script>
+</body>
+</html>

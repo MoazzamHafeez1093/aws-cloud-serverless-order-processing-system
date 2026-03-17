@@ -1,0 +1,15 @@
+# Credentials & secrets — never commit these
+sqs_credentials.txt
+*.env
+.env*
+credentials*
+secrets*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
