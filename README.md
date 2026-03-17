@@ -131,7 +131,6 @@ aws-serverless-order-processing-system/
 ├── 📖  README.md                   ←  You are here
 │
 └── 📸  screenshots/
-    ├── architecture.png            ←  System architecture diagram
     ├── cloudshell-success.png      ←  Successful API call via CloudShell
     ├── dynamodb-orders.png         ←  Live orders in DynamoDB
     ├── sqs-messages.png            ←  Messages queued in SQS
@@ -268,37 +267,31 @@ curl -X POST https://YOUR_API_URL/default/LambdaSQS \
 
 ## 📸 Screenshots
 
-<details>
-<summary><strong>CloudShell — Successful API Response</strong></summary>
-<br/>
+### 1️⃣ CloudShell — Successful API Response
+> Sending a `POST` request via AWS CloudShell and receiving a `200 OK` response.
 
 ![CloudShell Success](screenshots/cloudshell-success.png)
 
-</details>
+---
 
-<details>
-<summary><strong>DynamoDB — Orders Table with Live Data</strong></summary>
-<br/>
+### 2️⃣ DynamoDB — Orders Table with Live Data
+> Order records persisted in real-time to the `Orders` DynamoDB table.
 
 ![DynamoDB Orders](screenshots/dynamodb-orders.png)
 
-</details>
+---
 
-<details>
-<summary><strong>SQS — Messages in Queue</strong></summary>
-<br/>
+### 3️⃣ SQS — Messages in Queue
+> Queued order messages visible in the `MyProcessingQ.fifo` SQS FIFO queue.
 
 ![SQS Messages](screenshots/sqs-messages.png)
 
-</details>
+---
 
-<details>
-<summary><strong>Email Notification from SNS</strong></summary>
-<br/>
+### 4️⃣ Email Notification from SNS
+> Instant email alert triggered by SNS upon successful order placement.
 
 ![Email Notification](screenshots/email-notification.png)
-
-</details>
 
 ---
 
