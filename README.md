@@ -13,11 +13,11 @@
 [![Serverless](https://img.shields.io/badge/Architecture-Serverless-%238A2BE2?style=for-the-badge&logo=serverless&logoColor=white)](https://aws.amazon.com/serverless/)
 [![Python](https://img.shields.io/badge/Python-3.12-%233776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-%2322C55E?style=for-the-badge)](LICENSE)
-[![Status](https://img.shields.io/badge/Status-Live%20%26%20Deployed-%2310B981?style=for-the-badge)](https://moazzamhafeez1093.github.io/aws-serverless-order-processing-system-lambda-sqs-sns-dynamodb)
+[![Status](https://img.shields.io/badge/Status-Live%20%26%20Deployed-%2310B981?style=for-the-badge)](https://moazzamhafeez1093.github.io/aws-cloud-serverless-order-processing-system/)
 
 <br/>
 
-### 🔴 [View Live Demo](https://moazzamhafeez1093.github.io/aws-serverless-order-processing-system-lambda-sqs-sns-dynamodb)
+### 🔴 [View Live Demo](https://moazzamhafeez1093.github.io/aws-cloud-serverless-order-processing-system/)
 
 <br/>
 
