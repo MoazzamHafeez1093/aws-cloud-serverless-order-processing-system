@@ -295,6 +295,13 @@ curl -X POST https://YOUR_API_URL/default/LambdaSQS \
 
 ---
 
+### 5️⃣ Live Site — Full Order Pipeline in Action
+> End-to-end order processing from the live demo site — request sent, processed, and confirmed.
+
+![Full Pipeline](screenshots/full_pipeline.png)
+
+---
+
 ## 📦 Sample API Payload
 
 ```json
